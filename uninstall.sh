@@ -23,4 +23,17 @@ for p in best-coding best-reasoning fast cheap free; do
   rm -f "$CODEX_HOME/omniroute-$p.config.toml"
 done
 echo "==> Removed omniroute-* profile files"
-echo "Done. (Your OMNIROUTE_API_KEY line in ~/.zshrc / ~/.bashrc was left in place.)"
+
+# Remove the OMNIROUTE_API_KEY line (and its comment) that setup.sh added.
+for rc in "$HOME/.zshrc" "$HOME/.bashrc"; do
+  [ -f "$rc" ] || continue
+  if grep -q '^export OMNIROUTE_API_KEY=' "$rc" 2>/dev/null; then
+    tmp="$(mktemp)"
+    grep -v '^export OMNIROUTE_API_KEY=' "$rc" \
+      | grep -v '^# OmniRoute API key for the Codex CLI$' > "$tmp"
+    mv "$tmp" "$rc"
+    echo "==> Removed OMNIROUTE_API_KEY from $rc"
+  fi
+done
+
+echo "Done — Codex is back to normal. Open a new terminal so the removed key clears."

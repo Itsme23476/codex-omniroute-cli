@@ -1,131 +1,159 @@
 # codex-omniroute-cli
 
-Point the **OpenAI Codex CLI** at **OmniRoute** models in one command.
+Make the **OpenAI Codex CLI** use **OmniRoute** models — with one command.
+Undo it anytime with one command. Your normal Codex keeps working the whole time.
 
-Your normal Codex (signed in with your ChatGPT account) keeps working exactly as before — this only *adds* an OmniRoute provider plus a few opt-in profiles. You get OmniRoute models only when you pass `--profile`.
-
-> **Why the CLI and not the Codex desktop app?** The Codex **desktop app**, when you're signed in with a ChatGPT account, only allows OpenAI's own models — custom providers like OmniRoute get rejected server-side (`"... not supported when using Codex with a ChatGPT account"`). The **CLI** has no such restriction, so this is the reliable way to use OmniRoute with Codex.
-
----
-
-## Prerequisites
-
-1. **OmniRoute installed and running** on `http://localhost:20128` (its default). Open `http://localhost:20128/dashboard` to confirm.
-2. **Your OmniRoute API key** — copy it from the OmniRoute dashboard.
-3. **Node.js** (only if you don't already have the Codex CLI — the script installs Codex with `npm i -g @openai/codex`).
+Follow the steps in order. Each step tells you exactly what to type and what you should see.
 
 ---
 
-## Quick start (one command)
+## ⚠️ Read this first (30 seconds)
+
+- This works in the **Codex CLI** (the terminal), **not** the Codex desktop app.
+  The desktop app blocks non-OpenAI models when you're signed in with a ChatGPT account. The CLI does not. That's the whole reason this exists.
+- You need **two things ready** before you start (Step 0).
+
+---
+
+## Step 0 — Get the two things you need
+
+**A) OmniRoute must be running.**
+Open a browser and go to: **http://localhost:20128/dashboard**
+- If a dashboard loads → good, OmniRoute is running. ✅
+- If nothing loads → open OmniRoute and start it first, then come back.
+
+**B) Get your OmniRoute API key.**
+On that same dashboard, find your **API key** and copy it. You'll paste it in Step 1.
+(It's a long string. Keep it handy.)
+
+---
+
+## Step 1 — Install (choose ONE option)
+
+### Option 1 — One command (recommended, easiest) ⭐
+
+Copy this line, **replace `YOUR_KEY`** with the key from Step 0, paste it into your terminal, press Enter:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Itsme23476/codex-omniroute-cli/main/setup.sh | bash -s -- YOUR_OMNIROUTE_API_KEY
+curl -fsSL https://raw.githubusercontent.com/Itsme23476/codex-omniroute-cli/main/setup.sh | bash -s -- YOUR_KEY
 ```
 
-Or clone and run:
-
-```bash
-git clone https://github.com/Itsme23476/codex-omniroute-cli.git
-cd codex-omniroute-cli
-./setup.sh                # it will prompt for your key
+**What you should see at the end:**
 ```
+✅ Done. Use OmniRoute from the Codex CLI:
+  codex --profile omniroute-best-coding
+```
+If you see that, you're set. Go to Step 2.
 
-Then **open a new terminal** (so your key is loaded) and go:
+---
+
+### Option 2 — Let the Codex CLI do it (nice for a video)
+
+1. In your terminal, type `codex` and press Enter (this uses your normal ChatGPT account).
+2. Paste the **Setup prompt** (see "Copy-paste prompts" near the bottom), with your key filled in.
+3. Approve the command when Codex asks. When it finishes, go to Step 2.
+
+---
+
+### Option 3 — Do it by hand (if you don't want to run a script)
+
+1. Open the file `~/.codex/config.toml` in any text editor (if it doesn't exist, create it).
+2. Add these **exact** lines at the bottom and save:
+   ```toml
+   [model_providers.omniroute]
+   name = "OmniRoute"
+   base_url = "http://localhost:20128/v1"
+   env_key = "OMNIROUTE_API_KEY"
+   wire_api = "responses"
+   ```
+3. Create a file named `~/.codex/omniroute-best-coding.config.toml` with these two lines and save:
+   ```toml
+   model = "auto/best-coding"
+   model_provider = "omniroute"
+   ```
+4. Tell your terminal your key (replace `YOUR_KEY`), then press Enter:
+   ```bash
+   echo 'export OMNIROUTE_API_KEY="YOUR_KEY"' >> ~/.zshrc && export OMNIROUTE_API_KEY="YOUR_KEY"
+   ```
+5. Go to Step 2.
+
+---
+
+## Step 2 — Use it
+
+Open a **new terminal window** (important — this loads your key), then type:
 
 ```bash
 codex --profile omniroute-best-coding
 ```
 
----
+Codex now runs on OmniRoute. Test it — ask it anything, e.g. type: `say CODEX_OMNIROUTE_OK`.
+- You'll see a header line: `provider: omniroute` and `model: auto/best-coding`. That means it's working. ✅
+- (You may see a small yellow warning `Model metadata ... not found`. Ignore it — it's harmless, the answer still comes back.)
 
-## What it sets up
+**Other speeds/models** — same command, different profile:
+```bash
+codex --profile omniroute-fast            # quick + cheap
+codex --profile omniroute-best-reasoning  # deeper thinking
+codex --profile omniroute-cheap           # lowest cost
+codex --profile omniroute-free            # free models
+```
 
-- Adds a managed `[model_providers.omniroute]` block to `~/.codex/config.toml` (idempotent — re-running just refreshes it, the rest of your config is untouched):
-  ```toml
-  [model_providers.omniroute]
-  name = "OmniRoute"
-  base_url = "http://localhost:20128/v1"
-  env_key = "OMNIROUTE_API_KEY"
-  wire_api = "responses"
-  ```
-- Writes five opt-in profile files in `~/.codex/`:
-
-  | Profile | Model | For |
-  |---|---|---|
-  | `omniroute-best-coding` | `auto/best-coding` | coding work |
-  | `omniroute-best-reasoning` | `auto/best-reasoning` | deeper reasoning |
-  | `omniroute-fast` | `auto/fast` | quick responses |
-  | `omniroute-cheap` | `auto/cheap` | lower cost |
-  | `omniroute-free` | `auto/best-free` | free models |
-
-- Saves `OMNIROUTE_API_KEY` to your shell profile (`~/.zshrc` or `~/.bashrc`). Codex reads the key from this environment variable — it does **not** read `.env` files.
+**To use your normal Codex again**, just leave off `--profile`:
+```bash
+codex
+```
 
 ---
 
-## Usage
+## Step 3 — Revert to normal (undo everything)
+
+One command puts you completely back to a plain Codex:
 
 ```bash
-# interactive
-codex --profile omniroute-best-coding
-
-# one-shot
-codex --profile omniroute-best-coding exec "say CODEX_OMNIROUTE_OK"
-
-# other tiers
-codex --profile omniroute-fast
-codex --profile omniroute-best-reasoning
+curl -fsSL https://raw.githubusercontent.com/Itsme23476/codex-omniroute-cli/main/uninstall.sh | bash
 ```
 
-Omit `--profile` to use your normal ChatGPT-account Codex as usual.
+**What you should see:**
+```
+Done — Codex is back to normal.
+```
+This removes the OmniRoute provider, the profiles, and the key line. Open a new terminal and `codex` is exactly as it was before.
+
+(Or, from inside `codex`, paste the **Revert prompt** below.)
 
 ---
 
-## Troubleshooting
+## Copy-paste prompts (for a video)
 
-- **`Model metadata for 'auto/best-coding' not found. Defaulting to fallback`** — harmless. Codex just doesn't have context-window metadata for OmniRoute's routed models; the call still works.
-- **`401` / `invalid_api_key`** — your `OMNIROUTE_API_KEY` is wrong or not loaded. Open a new terminal, or run `export OMNIROUTE_API_KEY="<your key>"`, then retry.
-- **Connection refused / can't reach OmniRoute** — OmniRoute isn't running. Start it and confirm `http://localhost:20128/dashboard` loads.
-- **It fails only in the desktop app** — expected. Use the CLI (see the note at the top).
+Two short prompts you can paste **into the `codex` terminal**. Fill in your key in the first one.
 
----
+**▶ Setup prompt** — makes Codex route itself through OmniRoute:
+```
+I have OmniRoute (an OpenAI-compatible model gateway) running locally at http://localhost:20128, and I want you — the Codex CLI — to start using its models. Run this one command exactly as written, then tell me to run `codex --profile omniroute-best-coding`:
 
-## Uninstall
-
-```bash
-./uninstall.sh
+curl -fsSL https://raw.githubusercontent.com/Itsme23476/codex-omniroute-cli/main/setup.sh | bash -s -- YOUR_KEY
 ```
 
-Removes the managed provider block and the five profile files. It leaves the rest of your Codex config and your `OMNIROUTE_API_KEY` line alone (delete that from your `~/.zshrc` / `~/.bashrc` by hand if you want it gone).
-
----
-
-## Alternative: a prompt you can paste into the Codex CLI
-
-A script is more reliable for a demo, but if you'd rather have Codex configure itself, run `codex` (normal ChatGPT-account mode) and paste this:
-
+**◀ Revert prompt** — puts Codex back to normal:
 ```
-Set up the Codex CLI to use my local OmniRoute gateway as a custom model provider. Do exactly this, nothing else:
+Undo the OmniRoute setup and put me back to my normal Codex. Run this one command exactly as written and confirm when it's done:
 
-1. In ~/.codex/config.toml, add (or replace) this exact block, without touching anything else in the file:
-
-[model_providers.omniroute]
-name = "OmniRoute"
-base_url = "http://localhost:20128/v1"
-env_key = "OMNIROUTE_API_KEY"
-wire_api = "responses"
-
-2. Create these profile files in ~/.codex/, each with the two lines shown:
-   - omniroute-best-coding.config.toml   -> model = "auto/best-coding"    and model_provider = "omniroute"
-   - omniroute-best-reasoning.config.toml-> model = "auto/best-reasoning" and model_provider = "omniroute"
-   - omniroute-fast.config.toml          -> model = "auto/fast"           and model_provider = "omniroute"
-   - omniroute-cheap.config.toml         -> model = "auto/cheap"          and model_provider = "omniroute"
-   - omniroute-free.config.toml          -> model = "auto/best-free"      and model_provider = "omniroute"
-
-3. Add `export OMNIROUTE_API_KEY="<I will paste my key>"` to my ~/.zshrc (replace any existing line for it).
-
-Do NOT change my default model or model_provider. When done, tell me to run: codex --profile omniroute-best-coding
+curl -fsSL https://raw.githubusercontent.com/Itsme23476/codex-omniroute-cli/main/uninstall.sh | bash
 ```
 
 ---
 
-Tested with `codex-cli 0.153.3` against OmniRoute on `localhost:20128`. MIT-style: do whatever you want with it.
+## If something goes wrong
+
+| You see… | It means… | Fix |
+|---|---|---|
+| `command not found: codex` | Codex CLI isn't installed | The one-command setup installs it automatically. Or install Node.js, then `npm i -g @openai/codex`. |
+| `401` / `invalid_api_key` | key is wrong or not loaded | Open a **new terminal**, or run `export OMNIROUTE_API_KEY="YOUR_KEY"`, then retry. |
+| `Connection refused` | OmniRoute isn't running | Start OmniRoute; check http://localhost:20128/dashboard loads. |
+| yellow `Model metadata ... not found` | cosmetic warning only | Ignore it — answers still work. |
+| works in terminal, fails in the **desktop app** | expected | Use the CLI. The desktop app can't use OmniRoute on a ChatGPT account. |
+
+---
+
+Tested with `codex-cli 0.153.3` against OmniRoute on `localhost:20128`. Do whatever you want with it.

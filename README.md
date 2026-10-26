@@ -9,8 +9,10 @@ Follow the steps in order. Each step tells you exactly what to type and what you
 
 ## ⚠️ Read this first (30 seconds)
 
-- This works in the **Codex CLI** (the terminal), **not** the Codex desktop app.
-  The desktop app blocks non-OpenAI models when you're signed in with a ChatGPT account. The CLI does not. That's the whole reason this exists.
+- This is built for the **Codex CLI** (the terminal). That is the supported path.
+  The Codex desktop app behaves differently across versions: some builds route
+  through the provider you configure, others ignore it and force OpenAI models
+  while you're signed in with a ChatGPT account. Don't judge the setup by the app.
 - You need **two things ready** before you start (Step 0).
 
 ---
@@ -88,8 +90,14 @@ codex --profile omniroute-best-coding
 ```
 
 Codex now runs on OmniRoute. Test it — ask it anything, e.g. type: `say CODEX_OMNIROUTE_OK`.
-- You'll see a header line: `provider: omniroute` and `model: auto/best-coding`. That means it's working. ✅
+- You'll see a header line: `provider: omniroute` and a `model:` line naming the
+  profile's model. That means it's working. ✅
 - (You may see a small yellow warning `Model metadata ... not found`. Ignore it — it's harmless, the answer still comes back.)
+- One-shot test from your shell (note the flag — without it Codex refuses to
+  start outside a git repository):
+  ```bash
+  codex --profile omniroute-best-coding exec --skip-git-repo-check "say CODEX_OMNIROUTE_OK"
+  ```
 
 **Other speeds/models** — same command, different profile:
 ```bash
@@ -149,10 +157,13 @@ curl -fsSL https://raw.githubusercontent.com/Itsme23476/codex-omniroute-cli/main
 | You see… | It means… | Fix |
 |---|---|---|
 | `command not found: codex` | Codex CLI isn't installed | The one-command setup installs it automatically. Or install Node.js, then `npm i -g @openai/codex`. |
+| `Error loading config.toml: ... Cannot declare ... twice` | two `[model_providers.omniroute]` tables in `config.toml` | Re-run `setup.sh` (it now de-duplicates), or delete the extra block by hand. |
+| `Error loading config.toml: invalid type ... AgentRoleToml` | your Codex CLI is older than the config it's reading | `npm i -g @openai/codex@latest` (config schema changes between versions). |
+| `503 Maximum combo retry limit reached` | the `auto/*` combo found no usable upstream (deposit/quota) | Use a concrete model, e.g. `OMNIROUTE_MODEL_CODING=antigravity/gemini-3.8-flash-tiered ./setup.sh KEY`. |
 | `401` / `invalid_api_key` | key is wrong or not loaded | Open a **new terminal**, or run `export OMNIROUTE_API_KEY="YOUR_KEY"`, then retry. |
 | `Connection refused` | OmniRoute isn't running | Start OmniRoute; check http://localhost:20128/dashboard loads. |
 | yellow `Model metadata ... not found` | cosmetic warning only | Ignore it — answers still work. |
-| works in terminal, fails in the **desktop app** | expected | Use the CLI. The desktop app can't use OmniRoute on a ChatGPT account. |
+| works in terminal, fails in the **desktop app** | expected on some app versions | Use the CLI. The app may force OpenAI models on a ChatGPT account. |
 
 ---
 
